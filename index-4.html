@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>文本与可缩放图片浏览</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0; /* 移除内边距 */
+            height: 100%;
+            overflow-x: hidden; /* 禁止横向滚动 */
+            font-family: Arial, sans-serif;
+            width: 100vw; /* 确保宽度填满视口 */
+        }
+
+        .split {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden; /* 防止溢出 */
+        }
+
+        .top, .bottom {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0; /* 移除内边距 */
+            width: 100%; /* 确保宽度填满父元素 */
+        }
+
+        .text-content {
+            white-space: pre-wrap; /* 保留换行 */
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .image {
+            position: relative;
+            width: 100%;
+            display: block;
+            transition: transform 0.1s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="split">
+        <!-- 上半部分显示文本 -->
+        <div class="top" id="top">
+            <div class="text-content">
+砰砰砰！喀锵！
+
+手枪发出子弹用尽的声音后，亚莉亚弯下身体，开始换弹匣。
+
+“——打倒它们了吗？”
+
+“我只是把它们赶到射程外而已。现在它们躲在树后面……待会儿肯定会再跑出来。”
+
+“坚强的孩子。你做到这样已经算很了不起了。”
+
+“……嗄？”
+
+我的语气突然变得很酷，亚莉亚听到不禁皱眉。
+
+啊啊，我又开始了吗？
+
+她的犹豫只维持了一瞬间。
+
+我一手穿过亚莉亚的细腿，另一支手绕过她娇小的后背，将她整个人抱在怀里后，猛然起身。
+
+“哇！”
+
+“我要奖励你，让你稍微当一下公主吧。”
+
+这突如其来的公主抱，让亚莉亚吓傻了眼。
+
+她张大的嘴中露出像猫科动物一样的犬齿，满脸通红。
+
+我抱着亚莉亚，脚踩在跳箱的边缘，一口气跳到仓库的边端。
+
+接着把亚莉亚放在堆积的体育垫子上。
+
+让她像人偶一样坐着。
+
+“什、什什、什么……！”
+
+我敏捷的动作，跟刚才简直像是换了一个人似的，亚莉亚不停眨动双眼。
+
+“公主就坐在这里好好休息吧。开枪这种事情，交给我就行了吧？”
+
+啊啊，我啊。
+
+我似乎已经无法停止自己了。
+
+“你……你……你怎么了？头壳坏掉了吗？”
+
+心慌意乱的娃娃声，被一阵枪声盖过。
+
+铿铿铿铿铿！
+            </div>
+        </div>
+
+        <!-- 下半部分显示图片 -->
+        <div class="bottom" id="bottom">
+            <div class="image-container" id="image-container">
+                <!-- 动态生成图片 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 恢复滚动位置
+        window.onload = function() {
+            document.getElementById('top').scrollTop = localStorage.getItem('topScroll') || 0;
+            restoreImageState();
+        };
+
+        // 保存滚动位置
+        document.getElementById('top').onscroll = function() {
+            localStorage.setItem('topScroll', this.scrollTop);
+        };
+
+        // 动态生成图片列表
+        const imageContainer = document.getElementById('image-container');
+        for (let i = 1; i <= 279; i++) {
+            const img = document.createElement('img');
+            img.src = `File ${String(i).padStart(5, '0')}.jpeg`;
+            img.alt = `Image ${i}`;
+            img.className = 'image';
+            imageContainer.appendChild(img);
+        }
+
+        // 缩放和拖移的实现
+        let scale = parseFloat(localStorage.getItem('imageScale')) || 1;
+        let translateY = parseFloat(localStorage.getItem('imageTranslateY')) || 0;
+        let initialDistance = 0;
+        let initialScale = scale;
+        let lastTouchY = 0;
+
+        function restoreImageState() {
+            // 恢复图片的缩放和拖移状态
+            const images = document.querySelectorAll('.image');
+            images.forEach(image => {
+                image.style.transform = `translateY(${translateY}px) scale(${scale})`;
+            });
+        }
+
+        imageContainer.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 1) {
+                lastTouchY = e.touches[0].clientY;
+            } else if (e.touches.length === 2) {
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialScale = scale;
+            }
+        });
+
+        imageContainer.addEventListener('touchmove', function (e) {
+            if (e.touches.length === 1) {
+                // 单指拖动，仅允许上下移动
+                let dy = e.touches[0].clientY - lastTouchY;
+                translateY += dy;
+                lastTouchY = e.touches[0].clientY;
+                const images = document.querySelectorAll('.image');
+                images.forEach(image => {
+                    image.style.transform = `translateY(${translateY}px) scale(${scale})`;
+                });
+            } else if (e.touches.length === 2) {
+                // 双指缩放
+                let newDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                scale = initialScale * (newDistance / initialDistance);
+                const images = document.querySelectorAll('.image');
+                images.forEach(image => {
+                    image.style.transform = `translateY(${translateY}px) scale(${scale})`;
+                });
+            }
+        });
+
+        imageContainer.addEventListener('touchend', function () {
+            // 保存图片的缩放和拖移状态
+            localStorage.setItem('imageScale', scale);
+            localStorage.setItem('imageTranslateY', translateY);
+        });
+    </script>
+</body>
+</html>
